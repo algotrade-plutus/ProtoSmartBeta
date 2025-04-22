@@ -1,0 +1,12 @@
+{
+    "from_date": "2017-01-01",
+    "to_date": "2019-01-01",
+    "os_from_date": "2019-01-02",
+    "os_to_date": "2019-12-31",
+    "step": 5e5,
+    "llb_low": 1e6,
+    "llb_high": 7e6,
+    "delta_low": 5e5,
+    "delta_high": 3e6,
+    "no_trials": 1000
+}

@@ -1,0 +1,7 @@
+{
+    "from_date": "2017-01-01",
+    "to_date": "2019-01-01",
+    "sell_fee": 0.0006,
+    "buy_fee": 0.0006,
+    "risk_fee_rate": 0.03
+}
