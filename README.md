@@ -21,7 +21,7 @@ We filter and hold a collection of stocks with a P/E ratio in the range (0, 15) 
 #### Daily closing price data
 - The daily close price is collected from Algotrade database using SQL queries. 
 - The data is collected using the script `data_loader.py` 
-- The data is stored in the `/temp.csv` file. 
+- The data is stored in the `data/pe_dps.csv` and `data/vnindex.csv` files. 
 
 #### Financial data
 - P/E and DPS are calculated based on:
@@ -58,46 +58,26 @@ Data can be download directly from [Google Drive](https://drive.google.com/drive
 - The data files are stored in the `data` folder with the following folder structure:
 ```
 data
-└── pe_dps.csv
+├── pe_dps.csv
+└── vnindex.csv
 ```
 - You should place this folder to the current ```PYTHONPATH``` for the following steps.
 #### Option 2. Run codes to collect data
 1. Collect data from database
-In the root directory of the project, run the following command. The process will take about 7-10 minutes to finish.
+Run this command below in the root directory .
 ```bash
 python data_loader.py
 ```
-The result will be stored in the `data/pe_dps.csv`
+The result will be stored in the `data/pe_dps.csv` and `data/vnindex.csv`
 ### In-sample Backtesting
-- To init parameters for the first run, access `config/config.yaml` file and adjust the `default_backtest_params`.
-- For this project, we use data of the period from 2023-02-01 to 2024-01-31 as the in-sample period. These can be adjusted in `config/config.yaml`.
-- `--name` argument must match the configuration name in `config/config.yaml` file, where each name has `start_date` and `end_date` parameters. The default name is `in_sample`. This name will also be used to save in the result folder.
+- Specify period and parameters in `parameter/backtesting_parameter.json` file.
 ```bash
-python -m src.backtest --name in_sample
+python backtesting.py
 ```
-The result will be stored in the `result/backtest/in_sample` folder.
+The result will be stored in the `result/backtest/` folder.
 
 ### Optimization
-Run this command to start the optimization process. You can adjust the random seed by editing `random_seed` in the `config/config.yaml` file. The default random seed is 42.
-```bash
-python -m src.optimize --n_trials 5000 
-```
-The optimization result will be stored in the `optimization` folder. And the optimized in-sample backtest result will be stored in the `backtest/optimized_in_sample` folder.
-This process will take about 1-2 hours to finish on a standard laptop. You can skip this step by copying the [best_params.json](doc/report/optimization/best_params.json) file to the `optimization` folder.
-
-After that, you can run the in-sample backtesting process again with the optimized parameters. 
-```bash
-python src.backtest --name optimized_in_sample
-```
-The result will be stored in the `result/backtest/optimized_in_sample` folder.
-
 ### Out-of-sample Backtesting
-Run this command to start the out-of-sample backtesting process.
-```bash
-python -m src.backtest --name out_sample
-```
-The result will be stored in the `result/backtest/out_sample` folder.
-
 ### Configurations
 ## In-sample Backtesting
 ### Evaluation Metrics
@@ -107,9 +87,22 @@ The result will be stored in the `result/backtest/out_sample` folder.
   - Sortino ratio (SoR)
   - Information ratio (Inf)
   - Maximum drawdown (MDD)
-  - Longest drawdown (LDD)
 ### Parameters
 ### In-sample Backtesting Result
+- The backtesting results with VNINDEX benchmark is constructuted from 2019-01-01 to 2022-01-01.
+```
+| Metric                 | Value                              |
+|------------------------|------------------------------------|
+| Sharpe Ratio           | -3.2323                            |
+| Information Ratio      | 0.0298                             |
+| Sortino Ratio          | -0.9558                            |
+| Maximum Drawdown (MDD) | -0.2828                            |
+```
+- The NAV chart
+![NAV chart with VNINDEX benchmark](result/backtest/nav.png)
+- Drawdown chart
+![Drawdown chart](result/backtest/drawdown.png)
+
 ## Optimization
 ### Optimization Result
 ## Out-of-sample Backtesting

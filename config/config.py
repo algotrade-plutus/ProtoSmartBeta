@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 import os
+import json
 
 load_dotenv()
 host = os.getenv("HOST")
@@ -15,3 +16,11 @@ db_params = {
     "user": user,
     "password": password,
 }
+
+backtesting_config = None
+with open("parameter/backtesting_parameter.json", 'r') as f:
+    backtesting_config = json.load(f)
+
+optimization_config = None
+with open("parameter/optimization_parameter.json", 'r') as f:
+    optimization_config = json.load(f)

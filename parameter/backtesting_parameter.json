@@ -1,12 +1,11 @@
 {
-    "from_date": "2017-01-01",
-    "to_date": "2019-01-01",
-    "os_from_date": "2019-01-02",
-    "os_to_date": "2019-12-31",
-    "step": 5e5,
-    "llb_low": 1e6,
-    "llb_high": 7e6,
-    "delta_low": 5e5,
-    "delta_high": 3e6,
-    "no_trials": 1000
+    "is_from_date_str": "2019-01-01",
+    "is_end_date_str": "2022-01-01",
+    "os_from_date_str": "2022-01-01",
+    "os_to_date_str": "2024-01-01",
+    "buy_fee": "0.00035",
+    "sell_fee": "0.00035",
+    "capital": "25e6",
+    "dy": [0.01, 1e6],
+    "pe": [0, 15]
 }

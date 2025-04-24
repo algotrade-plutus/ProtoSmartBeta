@@ -1,14 +1,12 @@
-import time
-from datetime import datetime
 from decimal import Decimal
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from config.config import backtesting_config
 from database.data_service import DataService
 from filter.financial import Financial
 from metrics.metric import Metric
-from visualization import plot_portfolio_allocation
 
 from utils import get_date, first_date_of_month, round_lot
 
@@ -21,38 +19,79 @@ class Backtesting:
         from_date_str: str,
         to_date_str: str,
         capital: Decimal,
-        path="temp.csv",
+        path="data/pe_dps.csv",
+        index_path="data/vnindex.csv",
     ):
         self.path = path
+        self.index_path = index_path
         self.buy_fee = buy_fee
         self.sell_fee = sell_fee
+        self.from_date_str = from_date_str
+        self.to_date_str = to_date_str
+        self.from_date_str = from_date_str
+        self.to_date_str = to_date_str
+        self.data_service = DataService()
+        self.metric = None
         self.code = [
             72,  # NET_PROFIT_AFTER_TAX_ATTRIBUTE_TO_SHAREHOLDER = 72
             4110,  # OWNER_CAPITAL = 4110
             308,  #  DIVIDENDS_PAID
         ]
-        self.from_date_str = from_date_str
-        self.to_date_str = to_date_str
-        self.data_service = DataService()
+
+        self.capital = capital
         self.portfolio: Dict[str, Decimal] = {"CASH": capital}
-        self.old_price: Dict[str, Decimal] = {}
         self.period_returns: List[Decimal] = []
         self.ac_returns: List[Decimal] = []
-        self.suspended_stock = []
         self.assets: List[Decimal] = [capital]
-        self.capital = capital
+
+        self.old_price: Dict[str, Decimal] = {}
+        self.suspended_stock = []
         self.allocation = []
+
+        # Date tracking
+        self.rebalancing_dates = []
         self.tracking_dates = []
 
         self.start, self.from_date, self.to_date, self.end = get_date(
             from_date_str, to_date_str, look_back=252, forward_period=40
         )
 
-    @staticmethod
-    def get_vnindex(self):
-        return self.data_service.get_index_data(self.start_date_str, self.end)
+    def load_vnindex(self) -> pd.DataFrame:
+        df = pd.DataFrame(
+            self.get_vnindex(),
+            columns=["date", "open", "close", "prev_close", "return", "ac_return"],
+        )
+        df.to_csv(self.index_path)
+        return df
 
-    def total_asset(self, current_stocks: pd.DataFrame) -> datetime:
+    def get_vnindex(self) -> pd.DataFrame:
+        """
+        Get VNINDEX price
+
+        Returns:
+            pd.DataFrame
+        """
+
+        _, _, _, end = get_date(
+            self.from_date_str, self.to_date_str, look_back=252, forward_period=40
+        )
+
+        vnindex_data = self.data_service.get_index_data(
+            self.from_date_str, end.strftime("%Y-%m-%d")
+        )
+        vnindex_data["prev_close"] = vnindex_data["close"].copy().shift(1)
+        vnindex_data.loc[0, "prev_close"] = vnindex_data.loc[0, "close"]
+        vnindex_data["return"] = (
+            vnindex_data["close"].copy() - vnindex_data["prev_close"]
+        ) / vnindex_data["prev_close"].copy()
+        vnindex_data["ac_return"] = (
+            vnindex_data["close"].copy() - vnindex_data["close"].iloc[0]
+        ) / vnindex_data["close"].iloc[0]
+        vnindex_data["return"] = vnindex_data["return"].apply(lambda x: Decimal(str(x)))
+
+        return vnindex_data
+
+    def total_asset(self, current_stocks: pd.DataFrame) -> Decimal:
         total_asset = self.portfolio["CASH"]
         for _, row in current_stocks.iterrows():
             total_asset += (
@@ -62,103 +101,142 @@ class Backtesting:
 
     def sell_stocks(
         self, current_stocks: pd.DataFrame, target_stocks: pd.DataFrame
-    ) -> Decimal:
+    ) -> Tuple[Decimal, Decimal, pd.DataFrame]:
+        """
+        Sell stock before going to buy phase
+
+        Args:
+            current_stocks (pd.DataFrame)
+            target_stocks (pd.DataFrame)
+
+        Returns:
+            Tuple[Decimal, Decimal, pd.DataFrame]: cash, total stock price, target portfolio
+        """
         total_cash = self.portfolio["CASH"]
+        stock_asset = Decimal('0.0')
+        selling_data = []
         for _, row in current_stocks.iterrows():
-            target_stock = (
+            target_qty = (
                 target_stocks[target_stocks["tickersymbol"] == row["tickersymbol"]][
-                    "amt"
+                    "qty"
                 ].iloc[0]
                 if target_stocks["tickersymbol"].isin([row["tickersymbol"]]).any()
                 else 0
             )
 
-            required_stock = target_stock - self.portfolio[row["tickersymbol"]]
+            required_qty = target_qty - self.portfolio[row["tickersymbol"]]
 
-            if required_stock < 0:
+            if required_qty <= 0:
+                selling_data.append(
+                    [
+                        row["tickersymbol"],
+                        -1 * required_qty,
+                        self.portfolio[row["tickersymbol"]],
+                        row["prev_close"] * required_qty * -1,
+                    ]
+                )
                 total_cash += (
                     Decimal(row["prev_close"])
-                    * -required_stock
+                    * -required_qty
                     * (Decimal('1.0') - self.sell_fee)
                 )
-                self.portfolio[row["tickersymbol"]] += required_stock
-                if self.portfolio[row["tickersymbol"]] == 0:
-                    del self.portfolio[row["tickersymbol"]]
+                self.portfolio[row["tickersymbol"]] += required_qty
 
-                target_stock = target_stocks.drop(
+                # update target stock
+                target_stocks.drop(
                     target_stocks[
                         target_stocks["tickersymbol"] == row["tickersymbol"]
                     ].index,
                     inplace=True,
                 )
-        target_stocks["amt"] = float(total_cash) / (
+            else:
+                target_stocks.loc[
+                    target_stocks["tickersymbol"] == row["tickersymbol"], "qty"
+                ] = required_qty
+
+            stock_asset += Decimal(row["close"]) * self.portfolio[row["tickersymbol"]]
+            if self.portfolio[row["tickersymbol"]] == 0:
+                del self.portfolio[row["tickersymbol"]]
+
+        target_stocks["adjusted_qty"] = float(total_cash) / (
             len(target_stocks)
             * target_stocks["prev_close"].copy()
             * (1 + float(self.buy_fee))
         )
-        target_stocks["amt"] = target_stocks["amt"].apply(round_lot)
-        target_stocks = target_stocks[target_stocks["amt"] > 0].copy()
+        target_stocks["adjusted_qty"] = (
+            target_stocks["adjusted_qty"].apply(round_lot).copy()
+        )
+        target_stocks = target_stocks[target_stocks["adjusted_qty"] > 0].copy()
 
-        return total_cash, target_stocks
+        return total_cash, stock_asset, target_stocks
 
-    def rebalancing(self, group: pd.DataFrame) -> Decimal:
+    def rebalancing(
+        self, group: pd.DataFrame, pe: List[float], dy: List[float]
+    ) -> Decimal:
         """
-            Buy and return current asset
+        Buy and return current asset: cash + stock asset
 
         Args:
             group (pd.DataFrame)
+            pe (List(float))
+            dy (List(float))
 
         Returns:
             Decimal
         """
         qualified_stocks = group[
-            (group['pe'].between(0, 15)) & (group['dy'] > 0.01)
+            (group['pe'].between(pe[0], pe[1])) & (group['dy'].between(dy[0], dy[1]))
         ].copy()
         stock_list = [symbol for symbol in self.portfolio if symbol != "CASH"]
         current_stocks = group[group["tickersymbol"].isin(stock_list)].copy()
         total_asset = self.total_asset(current_stocks)
-
-        qualified_stocks["amt"] = float(total_asset) / (
+        qualified_stocks["qty"] = float(total_asset) / (
             len(qualified_stocks) * qualified_stocks["prev_close"].copy()
         )
-        qualified_stocks["amt"] = qualified_stocks["amt"].apply(round_lot)
-        total_cash, qualified_stocks = self.sell_stocks(
+        qualified_stocks["qty"] = qualified_stocks["qty"].apply(round_lot)
+        total_cash, stock_asset, qualified_stocks = self.sell_stocks(
             current_stocks, qualified_stocks
         )
 
-        new_asset = Decimal('0.0')
-        allocation = {"holdings": {}}
+        new_asset = stock_asset
+        allocation = {"holding_capital": new_asset}
         for _, row in qualified_stocks.iterrows():
             self.old_price[row["tickersymbol"]] = row["close"]
-            current_qty = (
-                self.portfolio[row["tickersymbol"]]
-                if row["tickersymbol"] in self.portfolio
-                else 0
-            )
-            remained_amt = row["amt"] - current_qty
-            if remained_amt == 0:
-                continue
 
-            self.portfolio[row["tickersymbol"]] = row["amt"]
-            new_asset += Decimal(row["amt"]) * Decimal(row["close"])
-            allocation["holdings"][row["tickersymbol"]] = Decimal(row["amt"]) * Decimal(
-                row["close"]
-            )
+            # Updating cash
             total_cash -= (
-                remained_amt
+                row["qty"]
                 * Decimal(row["prev_close"])
-                * (Decimal('1.0') + self.sell_fee)
+                * (Decimal("1.0") + self.sell_fee)
             )
+
+            # Updating portfolio qty
+            if row["tickersymbol"] not in self.portfolio:
+                self.portfolio[row["tickersymbol"]] = 0
+            self.portfolio[row["tickersymbol"]] += row["qty"]
+
+            new_asset += Decimal(row["qty"]) * Decimal(row["close"])
+            allocation["holding_capital"] += Decimal(row["qty"]) * Decimal(row["close"])
 
         self.portfolio["CASH"] = total_cash
         new_asset += self.portfolio["CASH"]
+
+        # Update cash allocation
         allocation["cash_remaining"] = self.portfolio["CASH"]
         allocation["date"] = group["date"].iloc[0]
         self.allocation.append(allocation)
 
         return new_asset
 
-    def daily_update_asset(self, group: pd.DataFrame):
+    def daily_update_asset(self, group: pd.DataFrame) -> Decimal:
+        """
+        Daily update asset without rebalancing
+        Args:
+            group (pd.DataFrame)
+
+        Returns:
+            Decimal
+        """
         asset = Decimal('0.0')
         for symbol, value in self.portfolio.items():
             if symbol == "CASH":
@@ -176,10 +254,25 @@ class Backtesting:
 
         return asset
 
-    def update_period_return(self, group: pd.DataFrame, is_rebalancing: bool):
+    def update_period_return(
+        self,
+        group: pd.DataFrame,
+        is_rebalancing: bool,
+        pe=List[float],
+        dy=List[float],
+    ):
+        """
+        Update period return
+
+        Args:
+            group (pd.DataFrame)
+            is_rebalancing (bool)
+            pe (List(float))
+            dy (List(float))
+        """
         current_asset = self.assets[-1]
         updated_asset = (
-            self.rebalancing(group)
+            self.rebalancing(group, pe, dy)
             if is_rebalancing
             else self.daily_update_asset(group)
         )
@@ -187,14 +280,19 @@ class Backtesting:
         self.ac_returns.append(updated_asset / self.capital - 1)
         self.assets.append(updated_asset)
 
-    def load_data(self, from_date_str, to_date_str):
+    def load_data(self):
+        """
+        Load data to csv file
+        """
+        print("Fetching data from db...")
         start, from_date, to_date, end = get_date(
-            from_date_str, to_date_str, look_back=252, forward_period=40
+            self.from_date_str, self.to_date_str, look_back=252, forward_period=40
         )
         financial_data = self.data_service.get_financial_data(
             from_date.year - 1, to_date.year - 1, self.code
         )
 
+        print("Loading data...")
         daily_data = self.data_service.get_daily_data(from_date, end)
         daily_data['prev_close'] = (
             daily_data.groupby('tickersymbol')['close'].shift(1).dropna()
@@ -227,7 +325,15 @@ class Backtesting:
         backtesting_data.to_csv(self.path)
         print("Data is loaded...")
 
-    def run(self):
+    def run(self, pe=backtesting_config["pe"], dy=backtesting_config["dy"]):
+        """
+        Main function backtesting
+
+        Args:
+            pe (List(float), optional): Defaults to backtesting_config["pe"].
+            dy (List(float), optional): Defaults to backtesting_config["dy"].
+        """
+
         backtesting_data = pd.read_csv(self.path)
         backtesting_data["date"] = pd.to_datetime(backtesting_data["date"]).dt.date
         backtesting_data = backtesting_data.astype(
@@ -241,88 +347,90 @@ class Backtesting:
             }
         )
 
-        start = time.time()
         grouped_data = backtesting_data.groupby(["date"])
         rebalancing_dates = first_date_of_month(self.from_date_str, self.to_date_str)
         is_rebalancing = False
         for date, group in grouped_data:
             is_rebalancing = (
-                (not is_rebalancing and date[0] >= rebalancing_dates.queue[0])
+                ((not is_rebalancing) and (date[0] >= rebalancing_dates.queue[0]))
                 if not rebalancing_dates.empty()
                 else False
             )
-            self.update_period_return(group, is_rebalancing)
+            self.update_period_return(group, is_rebalancing, pe, dy)
             if is_rebalancing:
-                is_rebalancing = False
+                self.rebalancing_dates.append(date[0])
                 rebalancing_dates.get()
 
-            self.tracking_dates.append(date)
-        end = time.time()
+            self.tracking_dates.append(date[0])
 
-        print(f"Total time: {end - start}")
+        self.vnindex_data = pd.read_csv(self.index_path)
+        self.vnindex_data["date"] = pd.to_datetime(self.vnindex_data["date"]).dt.date
+        self.vnindex_data["return"] = self.vnindex_data["return"].apply(
+            lambda x: Decimal(str(x))
+        )
+        self.metric = Metric(self.period_returns, self.vnindex_data["return"].to_list())
+        return self.metric.sharpe_ratio(Decimal('0.03'))
+
+    def plot_nav(self):
+        plt.figure(figsize=(10, 6))
+
+        plt.plot(
+            self.tracking_dates,
+            self.ac_returns,
+            label="Portfolio",
+            color='black',
+        )
+        plt.plot(
+            self.vnindex_data["date"],
+            self.vnindex_data["ac_return"],
+            label="VNINDEX",
+            color='red',
+        )
+
+        plt.title('Asset Value Over Time')
+        plt.xlabel('Time Step')
+        plt.ylabel('Asset Value')
+        plt.grid(True)
+        plt.legend()
+        plt.savefig("result/backtest/nav.png", dpi=300, bbox_inches='tight')
+
+    def plot_drawdown(self):
+        _, dds = self.metric.maximum_drawdown()
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(
+            self.tracking_dates,
+            dds,
+            label="Portfolio",
+            color='black',
+        )
+
+        plt.title('Draw down Value Over Time')
+        plt.xlabel('Time Step')
+        plt.ylabel('Percentage')
+        plt.grid(True)
+        plt.savefig("result/backtest/drawdown.png", dpi=300, bbox_inches='tight')
 
 
 if __name__ == "__main__":
-    start_date_str = "2022-03-01"
-    end_date_str = "2024-01-01"
+    start_date_str = backtesting_config["is_from_date_str"]
+    end_date_str = backtesting_config["is_end_date_str"]
 
     smart_beta = Backtesting(
-        buy_fee=Decimal('0.00035'),
-        sell_fee=Decimal('0.00035'),
+        buy_fee=Decimal(backtesting_config["buy_fee"]),
+        sell_fee=Decimal(backtesting_config["sell_fee"]),
         from_date_str=start_date_str,
         to_date_str=end_date_str,
-        capital=Decimal("25e6"),
+        capital=Decimal(backtesting_config["capital"]),
     )
 
-    # # Uncomment this for loading data
-    # smart_beta.load_data(start_date_str, end_date_str)
+    sr = smart_beta.run()
 
-    start, from_date, to_date, end = get_date(
-        start_date_str, end_date_str, look_back=252, forward_period=40
-    )
-
-    vnindex_data = smart_beta.data_service.get_index_data(start_date_str, end)
-    vnindex_data["prev_close"] = vnindex_data["close"].copy().shift(1)
-    vnindex_data.loc[0, "prev_close"] = vnindex_data.loc[0, "close"]
-    vnindex_data["return"] = (
-        vnindex_data["close"].copy() - vnindex_data["prev_close"]
-    ) / vnindex_data["prev_close"].copy()
-    vnindex_data["ac_return"] = (
-        vnindex_data["close"].copy() - vnindex_data["close"].iloc[0]
-    ) / vnindex_data["close"].iloc[0]
-    vnindex_data["return"] = vnindex_data["return"].apply(lambda x: Decimal(str(x)))
-
-    smart_beta.run()
-    metric = Metric(smart_beta.period_returns, vnindex_data["return"].to_list())
-    # print(f"Sharpe ratio {metric.sharpe_ratio(Decimal('0.03'))}")
-    # print(f"Information ratio {metric.information_ratio()}")
-    mdd, dds = metric.maximum_drawdown()
+    print(f"Sharpe ratio {sr}")
+    print(f"Information ratio {smart_beta.metric.information_ratio()}")
+    print(f"Sortino ratio {smart_beta.metric.sortino_ratio( Decimal('0.03'))}")
+    mdd, dds = smart_beta.metric.maximum_drawdown()
     print(f"MDD {mdd}")
 
-    # print(f"Longest DD {metric.longest_drawdown()}")
-
-    # plot_portfolio_allocation(smart_beta.allocation[50:60])
-
-    plt.figure(figsize=(10, 6))
-    plt.plot(
-        smart_beta.tracking_dates,
-        dds,
-        label="Portfolio",
-        color='black',
-    )
-    # plt.plot(
-    #     vnindex_data["date"],
-    #     vnindex_data["ac_return"],
-    #     label="VNINDEX",
-    #     color='red',
-    # )
-
-    # Adding titles and labels
-    plt.title('Asset Value Over Time')
-    plt.xlabel('Time Step')
-    plt.ylabel('Asset Value')
-    plt.grid(True)
-
-    # Show the plot
-    plt.tight_layout()  # Ensures everything fits nicely
-    plt.show()
+    smart_beta.plot_nav()
+    smart_beta.plot_drawdown()

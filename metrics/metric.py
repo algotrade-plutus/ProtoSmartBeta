@@ -18,16 +18,17 @@ class Metric:
 
         return np.mean(excess_returns) / np.std(self.period_returns, ddof=1)
 
-    def sortino_ratio(period_returns: List[float], risk_free_return: float) -> float:
-        if not period_returns:
+    def sortino_ratio(self, risk_free_return: float) -> float:
+        if not self.period_returns:
             raise ValueError('Annual returns should not be None or empty')
 
         downside_returns = [
-            min(0, period_return - risk_free_return) for period_return in period_returns
+            min(0, period_return - risk_free_return)
+            for period_return in self.period_returns
         ]
         downside_risk = np.sqrt(np.mean([d_r**2 for d_r in downside_returns]))
 
-        return (np.mean(period_returns) - risk_free_return) / downside_risk
+        return (np.mean(self.period_returns) - risk_free_return) / downside_risk
 
     def maximum_drawdown(self):
         dds = []
@@ -82,7 +83,9 @@ class Metric:
             raise ValueError("Invalid Input")
 
         if len(self.period_returns) != len(self.benchmark_returns):
-            raise ValueError("Not equal length")
+            raise ValueError(
+                f"Not equal length {len(self.period_returns)} - {len(self.benchmark_returns)}"
+            )
 
         if any(period_return <= -1 for period_return in self.period_returns) or any(
             benchmark_return <= -1 for benchmark_return in self.benchmark_returns
