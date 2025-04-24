@@ -1,6 +1,8 @@
 import logging
+from decimal import Decimal
 import optuna
-from optuna.samplers import RandomSampler
+from optuna.samplers import TPESampler
+from config.config import backtesting_config, optimization_config
 
 import pandas as pd
 from metrics import *
@@ -11,39 +13,58 @@ from utils import get_date
 class OptunaCallBack:
     def __init__(self) -> None:
         logging.basicConfig(
-            filename="stat/optimization.log.csv", format="%(message)s", filemode="w"
+            filename="result/optimization/optimization.log",
+            format="%(message)s",
+            filemode="w",
         )
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
         self.logger = logger
-        self.logger.info(f"number,llb,lub,value")
+        self.logger.info(f"number,pelb,peub,dylb,dyub")
 
     def __call__(
         self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial
     ) -> None:
-        llb = trial.params["llb"]
-        lub = llb + trial.params["delta"]
-        self.logger.info(f"{trial.number},{llb},{lub},{trial.value}")
+        pelb = trial.params["pelb"]
+        peub = trial.params["peub"]
+        dylb = trial.params["dylb"]
+        dyub = trial.params["dyub"]
+        self.logger.info(f"{trial.number},{pelb},{peub},{dylb},{dyub},{trial.value}")
 
 
 if __name__ == "__main__":
-    start_date_str = "2022-01-01"
-    end_date_str = "2023-01-01"
-    start, from_date, to_date, end = get_date(
-        start_date_str, end_date_str, look_back=252, forward_period=40
-    )
+    start_date_str = backtesting_config["is_from_date_str"]
+    end_date_str = backtesting_config["is_end_date_str"]
 
-    print("Fetching Data...")
-    # financial_data = data_service.get_financial_data(start.year, to_date.year, INCLUDED_CODES)
-    df = pd.read_csv("temp.csv")
+    smart_beta = Backtesting(
+        buy_fee=Decimal(backtesting_config["buy_fee"]),
+        sell_fee=Decimal(backtesting_config["sell_fee"]),
+        from_date_str=start_date_str,
+        to_date_str=end_date_str,
+        capital=Decimal(backtesting_config["capital"]),
+    )
+    grouped_data, rebalancing_dates = smart_beta.process_data()
 
     def objective(trial):
-        pelb = trial.suggest_float("pelb", 0.0, 5.0)
-        peub = trial.suggest_float("peub", 10.0, 15.0)
-        dylb = trial.suggest_float("dylb", 0.01, 0.1)
+        pelb = trial.suggest_float(
+            "pelb", optimization_config["pe_low"][0], optimization_config["pe_low"][1]
+        )
+        peub = trial.suggest_float(
+            "peub", optimization_config["pe_high"][0], optimization_config["pe_high"][1]
+        )
+        dylb = trial.suggest_float(
+            "dylb", optimization_config["dy_low"][0], optimization_config["dy_low"][1]
+        )
+        dyub = trial.suggest_float(
+            "dyub", optimization_config["dy_high"][0], optimization_config["dy_high"][1]
+        )
+
+        return smart_beta.run(
+            grouped_data, rebalancing_dates, [pelb, peub], [dylb, dyub]
+        )
 
     optunaCallBack = OptunaCallBack()
-    study = optuna.create_study(sampler=RandomSampler(seed=2024), direction="maximize")
+    study = optuna.create_study(sampler=TPESampler(seed=2024), direction="maximize")
     study.optimize(
-        objective, n_trials=optimization_params["no_trials"], callbacks=[optunaCallBack]
+        objective, n_trials=optimization_config["no_trials"], callbacks=[optunaCallBack]
     )

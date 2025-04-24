@@ -16,7 +16,7 @@ def init_folder(path: str):
 
 
 if __name__ == "__main__":
-    required_directories = ["data", "result"]
+    required_directories = ["data", "result/optimization", "result/backtest"]
     for dir in required_directories:
         init_folder(dir)
 

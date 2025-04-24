@@ -325,15 +325,7 @@ class Backtesting:
         backtesting_data.to_csv(self.path)
         print("Data is loaded...")
 
-    def run(self, pe=backtesting_config["pe"], dy=backtesting_config["dy"]):
-        """
-        Main function backtesting
-
-        Args:
-            pe (List(float), optional): Defaults to backtesting_config["pe"].
-            dy (List(float), optional): Defaults to backtesting_config["dy"].
-        """
-
+    def process_data(self):
         backtesting_data = pd.read_csv(self.path)
         backtesting_data["date"] = pd.to_datetime(backtesting_data["date"]).dt.date
         backtesting_data = backtesting_data.astype(
@@ -347,8 +339,24 @@ class Backtesting:
             }
         )
 
-        grouped_data = backtesting_data.groupby(["date"])
-        rebalancing_dates = first_date_of_month(self.from_date_str, self.to_date_str)
+        self.vnindex_data = pd.read_csv(self.index_path)
+        self.vnindex_data["date"] = pd.to_datetime(self.vnindex_data["date"]).dt.date
+        self.vnindex_data["return"] = self.vnindex_data["return"].apply(
+            lambda x: Decimal(str(x))
+        )
+
+        return backtesting_data.groupby(["date"]), first_date_of_month(
+            self.from_date_str, self.to_date_str
+        )
+
+    def run(
+        self,
+        grouped_data,
+        rebalancing_dates,
+        pe=backtesting_config["pe"],
+        dy=backtesting_config["dy"],
+    ):
+
         is_rebalancing = False
         for date, group in grouped_data:
             is_rebalancing = (
@@ -363,11 +371,6 @@ class Backtesting:
 
             self.tracking_dates.append(date[0])
 
-        self.vnindex_data = pd.read_csv(self.index_path)
-        self.vnindex_data["date"] = pd.to_datetime(self.vnindex_data["date"]).dt.date
-        self.vnindex_data["return"] = self.vnindex_data["return"].apply(
-            lambda x: Decimal(str(x))
-        )
         self.metric = Metric(self.period_returns, self.vnindex_data["return"].to_list())
         return self.metric.sharpe_ratio(Decimal('0.03'))
 
@@ -424,7 +427,8 @@ if __name__ == "__main__":
         capital=Decimal(backtesting_config["capital"]),
     )
 
-    sr = smart_beta.run()
+    grouped_data, rebalancing_dates = smart_beta.process_data()
+    sr = smart_beta.run(grouped_data=grouped_data, rebalancing_dates=rebalancing_dates)
 
     print(f"Sharpe ratio {sr}")
     print(f"Information ratio {smart_beta.metric.information_ratio()}")

@@ -104,6 +104,10 @@ The result will be stored in the `result/backtest/` folder.
 ![Drawdown chart](result/backtest/drawdown.png)
 
 ## Optimization
-### Optimization Result
+The configuration of optimization is stored in `parameter/optimization_parameter.json` you can adjust the range of parameters. Random seed is used for reconstructing the optimization process. The optimized parameter is stored in `parameter/optimized_parameter.json`
 ## Out-of-sample Backtesting
+Run the backtesting command with the out-sample-data. To load out-sample-data run the command
+```bash
+python data_loader.py
+```
 ### Out-of-sample Backtesting Result
