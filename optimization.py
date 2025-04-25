@@ -3,18 +3,22 @@ Optimization module
 """
 
 import logging
-from decimal import Decimal
 import optuna
 from optuna.samplers import TPESampler
-from config.config import optimization_config
+from config.config import OPTIMIZATION_CONFIG
 
-import pandas as pd
-from metrics import *
 from backtesting import create_bt_instance
 
 
 class OptunaCallBack:
+    """
+    Optuna call back class
+    """
+
     def __init__(self) -> None:
+        """
+        Init optuna callback
+        """
         logging.basicConfig(
             filename="result/optimization/optimization.log.csv",
             format="%(message)s",
@@ -23,33 +27,54 @@ class OptunaCallBack:
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
         self.logger = logger
-        self.logger.info(f"number,pelb,peub,dylb,dyub")
+        self.logger.info("number,pelb,peub,dylb,dyub")
 
-    def __call__(
-        self, study: optuna.study.Study, trial: optuna.trial.FrozenTrial
-    ) -> None:
+    def __call__(self, _: optuna.study.Study, trial: optuna.trial.FrozenTrial) -> None:
+        """
+
+        Args:
+            study (optuna.study.Study): _description_
+            trial (optuna.trial.FrozenTrial): _description_
+        """
         pelb = trial.params["pelb"]
         peub = trial.params["peub"]
         dylb = trial.params["dylb"]
         dyub = trial.params["dyub"]
-        self.logger.info(f"{trial.number},{pelb},{peub},{dylb},{dyub},{trial.value}")
+        self.logger.info(
+            "%s,%s,%s,%s,%s,%s",
+            trial.number,
+            pelb,
+            peub,
+            dylb,
+            dyub,
+            trial.value,
+        )
 
 
 if __name__ == "__main__":
     smart_beta, grouped_data, rebalancing_dates = create_bt_instance()
 
     def objective(trial):
+        """
+        Sharpe ratio objective function
+
+        Args:
+            trial (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         pelb = trial.suggest_float(
-            "pelb", optimization_config["pe_low"][0], optimization_config["pe_low"][1]
+            "pelb", OPTIMIZATION_CONFIG["pe_low"][0], OPTIMIZATION_CONFIG["pe_low"][1]
         )
         peub = trial.suggest_float(
-            "peub", optimization_config["pe_high"][0], optimization_config["pe_high"][1]
+            "peub", OPTIMIZATION_CONFIG["pe_high"][0], OPTIMIZATION_CONFIG["pe_high"][1]
         )
         dylb = trial.suggest_float(
-            "dylb", optimization_config["dy_low"][0], optimization_config["dy_low"][1]
+            "dylb", OPTIMIZATION_CONFIG["dy_low"][0], OPTIMIZATION_CONFIG["dy_low"][1]
         )
         dyub = trial.suggest_float(
-            "dyub", optimization_config["dy_high"][0], optimization_config["dy_high"][1]
+            "dyub", OPTIMIZATION_CONFIG["dy_high"][0], OPTIMIZATION_CONFIG["dy_high"][1]
         )
 
         return smart_beta.run(
@@ -59,5 +84,5 @@ if __name__ == "__main__":
     optunaCallBack = OptunaCallBack()
     study = optuna.create_study(sampler=TPESampler(seed=2024), direction="maximize")
     study.optimize(
-        objective, n_trials=optimization_config["no_trials"], callbacks=[optunaCallBack]
+        objective, n_trials=OPTIMIZATION_CONFIG["no_trials"], callbacks=[optunaCallBack]
     )

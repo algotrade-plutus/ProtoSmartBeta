@@ -1,3 +1,7 @@
+"""
+Out-sample evaluation module
+"""
+
 from decimal import Decimal
 from backtesting import create_bt_instance
 
@@ -8,8 +12,8 @@ if __name__ == "__main__":
     )
 
     sr = bt.run(
-        grouped_data=grouped_data,
-        rebalancing_dates=rebalancing_dates,
+        processed_data=grouped_data,
+        execution_dates=rebalancing_dates,
         pe=[0.2164884729382647, 17.174669892864713],
         dy=[0.034556913031198136, 0.0876931181106818],
     )

@@ -54,7 +54,7 @@ DB_PORT=<database port>
 
 ### Data Collection
 #### Option 1. Download from Google Drive
-Data can be download directly from [Google Drive](https://drive.google.com/drive/folders/1kdCQ7sQJIKiBMWDF37x5PflQ2gAejmDs?usp=sharing).
+Data can be download directly from [Google Drive](https://drive.google.com/drive/folders/1HleJFa_26hRajpOlmaREhcioXv9RSSUe?usp=drive_link).
 - The data files are stored in the `data` folder with the following folder structure:
 ```
 data

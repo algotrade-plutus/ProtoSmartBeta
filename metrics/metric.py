@@ -8,7 +8,16 @@ import numpy as np
 
 
 class Metric:
+    """
+    Metric: sharpe, sortino, information ratios, MDD
+    """
+
     def __init__(self, period_returns: List[Decimal], benchmark_returns: List[Decimal]):
+        """
+        Args:
+            period_returns (List[Decimal]): _description_
+            benchmark_returns (List[Decimal]): _description_
+        """
         self.period_returns = period_returns
         self.benchmark_returns = benchmark_returns
 
@@ -82,13 +91,11 @@ class Metric:
         mdd = 0
         for period_return in self.period_returns:
             cur_perf *= 1 + period_return
-            if cur_perf > peak:
-                peak = cur_perf
+            peak = max(peak, cur_perf)
 
             dd = cur_perf / peak - 1
             dds.append(dd)
-            if dd < mdd:
-                mdd = dd
+            mdd = min(dd, mdd)
 
         return mdd, dds
 
@@ -122,8 +129,7 @@ class Metric:
                 continue
 
             cur_period += 1
-            if cur_period > max_period:
-                max_period = cur_period
+            max_period = max(max_period, cur_period)
 
         return max_period
 

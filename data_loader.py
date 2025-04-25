@@ -1,8 +1,5 @@
 import os
-from decimal import Decimal
-
-from config.config import backtesting_config
-from backtesting import Backtesting, create_bt_instance
+from backtesting import create_bt_instance
 
 
 def init_folder(path: str):
@@ -24,8 +21,8 @@ if __name__ == "__main__":
         "result/backtest",
         "result/optimization",
     ]
-    for dir in required_directories:
-        init_folder(dir)
+    for dr in required_directories:
+        init_folder(dr)
 
     # Loading insample data
     is_instance, _, _ = create_bt_instance(process_data=False, is_data=True)

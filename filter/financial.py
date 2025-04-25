@@ -7,7 +7,18 @@ import pandas as pd
 
 
 class Financial:
+    """
+    Financial data class
+    """
+
     def __init__(self, from_date: datetime, to_date: datetime, data: pd.DataFrame):
+        """
+
+        Args:
+            from_date (datetime): _description_
+            to_date (datetime): _description_
+            data (pd.DataFrame): _description_
+        """
         self.from_date = from_date
         self.to_date = to_date
         self.data = data

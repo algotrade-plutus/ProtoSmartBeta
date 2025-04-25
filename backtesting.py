@@ -7,7 +7,7 @@ from typing import List, Dict, Tuple
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from config.config import backtesting_config
+from config.config import BACKTESTING_CONFIG
 from database.data_service import DataService
 from filter.financial import Financial
 from metrics.metric import Metric
@@ -23,22 +23,22 @@ def create_bt_instance(process_data=True, is_data=True):
         _type_: smart_beta, grouped_data, rebalancing_dates
     """
     start_date_str = (
-        backtesting_config["is_from_date_str"]
+        BACKTESTING_CONFIG["is_from_date_str"]
         if is_data
-        else backtesting_config["os_from_date_str"]
+        else BACKTESTING_CONFIG["os_from_date_str"]
     )
     end_date_str = (
-        backtesting_config["is_end_date_str"]
+        BACKTESTING_CONFIG["is_end_date_str"]
         if is_data
-        else backtesting_config["os_to_date_str"]
+        else BACKTESTING_CONFIG["os_to_date_str"]
     )
 
     bt = Backtesting(
-        buy_fee=Decimal(backtesting_config["buy_fee"]),
-        sell_fee=Decimal(backtesting_config["sell_fee"]),
+        buy_fee=Decimal(BACKTESTING_CONFIG["buy_fee"]),
+        sell_fee=Decimal(BACKTESTING_CONFIG["sell_fee"]),
         from_date_str=start_date_str,
         to_date_str=end_date_str,
-        capital=Decimal(backtesting_config["capital"]),
+        capital=Decimal(BACKTESTING_CONFIG["capital"]),
         path="data/is/pe_dps.csv" if is_data else "data/os/pe_dps.csv",
         index_path="data/is/vnindex.csv" if is_data else "data/os/vnindex.csv",
     )
@@ -48,6 +48,10 @@ def create_bt_instance(process_data=True, is_data=True):
 
 
 class Backtesting:
+    """
+    Backtesting main class
+    """
+
     def __init__(
         self,
         buy_fee: Decimal,
@@ -58,6 +62,18 @@ class Backtesting:
         path="data/is/pe_dps.csv",
         index_path="data/is/vnindex.csv",
     ):
+        """
+        Initiate required data
+
+        Args:
+            buy_fee (Decimal)
+            sell_fee (Decimal)
+            from_date_str (str)
+            to_date_str (str)
+            capital (Decimal)
+            path (str, optional). Defaults to "data/is/pe_dps.csv".
+            index_path (str, optional). Defaults to "data/is/vnindex.csv".
+        """
         self.path = path
         self.index_path = index_path
         self.buy_fee = buy_fee
@@ -87,12 +103,19 @@ class Backtesting:
         # Date tracking
         self.rebalancing_dates = []
         self.tracking_dates = []
+        self.vnindex_data = None
 
         self.start, self.from_date, self.to_date, self.end = get_date(
             from_date_str, to_date_str, look_back=252, forward_period=40
         )
 
     def load_vnindex(self) -> pd.DataFrame:
+        """
+        Load VNINDEX from csv
+
+        Returns:
+            pd.DataFrame
+        """
         df = pd.DataFrame(
             self.get_vnindex(),
             columns=["date", "open", "close", "prev_close", "return", "ac_return"],
@@ -128,6 +151,15 @@ class Backtesting:
         return vnindex_data
 
     def total_asset(self, current_stocks: pd.DataFrame) -> Decimal:
+        """
+        Get total asset
+
+        Args:
+            current_stocks (pd.DataFrame)
+
+        Returns:
+            Decimal
+        """
         total_asset = self.portfolio["CASH"]
         for _, row in current_stocks.iterrows():
             total_asset += (
@@ -282,7 +314,7 @@ class Backtesting:
                     price = group[group['tickersymbol'] == symbol]["close"].iloc[0]
                     asset += value * Decimal(price)
                     self.old_price[symbol] = price
-                except:
+                except Exception as _:
                     self.suspended_stock.append(
                         [group["date"].iloc[0], symbol, self.old_price[symbol]]
                     )
@@ -362,6 +394,12 @@ class Backtesting:
         print("Data is loaded...")
 
     def process_data(self):
+        """
+        Process and group data to single data frame
+
+        Returns:
+            _type_: _description_
+        """
         backtesting_data = pd.read_csv(self.path)
         backtesting_data["date"] = pd.to_datetime(backtesting_data["date"]).dt.date
         backtesting_data = backtesting_data.astype(
@@ -387,23 +425,33 @@ class Backtesting:
 
     def run(
         self,
-        grouped_data,
-        rebalancing_dates,
-        pe=backtesting_config["pe"],
-        dy=backtesting_config["dy"],
+        processed_data,
+        execution_dates,
+        pe=BACKTESTING_CONFIG["pe"],
+        dy=BACKTESTING_CONFIG["dy"],
     ):
+        """_summary_
 
+        Args:
+            processed_data (_type_): _description_
+            execution_dates (_type_): _description_
+            pe (_type_, optional): _description_. Defaults to backtesting_config["pe"].
+            dy (_type_, optional): _description_. Defaults to backtesting_config["dy"].
+
+        Returns:
+            _type_: _description_
+        """
         is_rebalancing = False
-        for date, group in grouped_data:
+        for date, group in processed_data:
             is_rebalancing = (
-                ((not is_rebalancing) and (date[0] >= rebalancing_dates.queue[0]))
-                if not rebalancing_dates.empty()
+                ((not is_rebalancing) and (date[0] >= execution_dates.queue[0]))
+                if not execution_dates.empty()
                 else False
             )
             self.update_period_return(group, is_rebalancing, pe, dy)
             if is_rebalancing:
                 self.rebalancing_dates.append(date[0])
-                rebalancing_dates.get()
+                execution_dates.get()
 
             self.tracking_dates.append(date[0])
 
@@ -411,6 +459,12 @@ class Backtesting:
         return self.metric.sharpe_ratio(Decimal('0.03'))
 
     def plot_nav(self, path="result/backtest/nav.png"):
+        """
+        Plot and save NAV chart to path
+
+        Args:
+            path (str, optional): _description_. Defaults to "result/backtest/nav.png".
+        """
         plt.figure(figsize=(10, 6))
 
         plt.plot(
@@ -434,12 +488,18 @@ class Backtesting:
         plt.savefig(path, dpi=300, bbox_inches='tight')
 
     def plot_drawdown(self, path="result/backtest/drawdown.png"):
-        _, dds = self.metric.maximum_drawdown()
+        """
+        Plot and save drawdown chart to path
+
+        Args:
+            path (str, optional): _description_. Defaults to "result/backtest/drawdown.png".
+        """
+        _, drawdowns = self.metric.maximum_drawdown()
 
         plt.figure(figsize=(10, 6))
         plt.plot(
             self.tracking_dates,
-            dds,
+            drawdowns,
             label="Portfolio",
             color='black',
         )
@@ -452,8 +512,10 @@ class Backtesting:
 
 
 if __name__ == "__main__":
-    smart_beta, grouped_data, rebalancing_dates = create_bt_instance()
-    sr = smart_beta.run(grouped_data=grouped_data, rebalancing_dates=rebalancing_dates)
+    smart_beta, grouped_data, rebalancing_dates = create_bt_instance(
+        process_data=True, is_data=True
+    )
+    sr = smart_beta.run(processed_data=grouped_data, execution_dates=rebalancing_dates)
 
     print(f"Sharpe ratio {sr}")
     print(f"Information ratio {smart_beta.metric.information_ratio()}")

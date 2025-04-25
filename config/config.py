@@ -1,3 +1,7 @@
+"""
+Configuration module
+"""
+
 import os
 import json
 from dotenv import load_dotenv
@@ -18,10 +22,10 @@ db_params = {
     "password": password,
 }
 
-backtesting_config = None
-with open("parameter/backtesting_parameter.json", 'r') as f:
-    backtesting_config = json.load(f)
+BACKTESTING_CONFIG = None
+with open("parameter/backtesting_parameter.json", 'r', encoding="utf-8") as f:
+    BACKTESTING_CONFIG = json.load(f)
 
-optimization_config = None
-with open("parameter/optimization_parameter.json", 'r') as f:
-    optimization_config = json.load(f)
+OPTIMIZATION_CONFIG = None
+with open("parameter/optimization_parameter.json", 'r', encoding="utf-8") as f:
+    OPTIMIZATION_CONFIG = json.load(f)

@@ -1,11 +1,15 @@
-daily_data_query = """
+"""
+SQL query
+"""
+
+DAILY_DATA_QUERY = """
     select extract(year from datetime - interval '12 month'), datetime, tickersymbol, price
     from quote.close
     where datetime between %s and %s and length(tickersymbol) = 3 and tickersymbol <> 'SPX'
     order by datetime, tickersymbol
 """
 
-financial_info_query = """
+FINANCIAL_INFO_QUERY = """
     with ticker as (
         select t.tickersymbol 
         from quote.ticker t
@@ -18,7 +22,7 @@ financial_info_query = """
     order by i.year, i.tickersymbol, i.code
 """
 
-index_query = """
+INDEX_QUERY = """
     select o.datetime, o.price as op, c.price as cp
     from quote.open o join quote.close c
     on o.tickersymbol = c.tickersymbol and o.datetime = c.datetime
