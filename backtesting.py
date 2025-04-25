@@ -1,3 +1,7 @@
+"""
+This is main module for strategy backtesting
+"""
+
 from decimal import Decimal
 from typing import List, Dict, Tuple
 import pandas as pd
@@ -8,7 +12,39 @@ from database.data_service import DataService
 from filter.financial import Financial
 from metrics.metric import Metric
 
-from utils import get_date, first_date_of_month, round_lot
+from utils import get_date, first_date_of_months, round_lot
+
+
+def create_bt_instance(process_data=True, is_data=True):
+    """
+    Create backtesting instance
+
+    Returns:
+        _type_: smart_beta, grouped_data, rebalancing_dates
+    """
+    start_date_str = (
+        backtesting_config["is_from_date_str"]
+        if is_data
+        else backtesting_config["os_from_date_str"]
+    )
+    end_date_str = (
+        backtesting_config["is_end_date_str"]
+        if is_data
+        else backtesting_config["os_to_date_str"]
+    )
+
+    bt = Backtesting(
+        buy_fee=Decimal(backtesting_config["buy_fee"]),
+        sell_fee=Decimal(backtesting_config["sell_fee"]),
+        from_date_str=start_date_str,
+        to_date_str=end_date_str,
+        capital=Decimal(backtesting_config["capital"]),
+        path="data/is/pe_dps.csv" if is_data else "data/os/pe_dps.csv",
+        index_path="data/is/vnindex.csv" if is_data else "data/os/vnindex.csv",
+    )
+
+    data, dates = bt.process_data() if process_data else (None, None)
+    return bt, data, dates
 
 
 class Backtesting:
@@ -19,8 +55,8 @@ class Backtesting:
         from_date_str: str,
         to_date_str: str,
         capital: Decimal,
-        path="data/pe_dps.csv",
-        index_path="data/vnindex.csv",
+        path="data/is/pe_dps.csv",
+        index_path="data/is/vnindex.csv",
     ):
         self.path = path
         self.index_path = index_path
@@ -345,7 +381,7 @@ class Backtesting:
             lambda x: Decimal(str(x))
         )
 
-        return backtesting_data.groupby(["date"]), first_date_of_month(
+        return backtesting_data.groupby(["date"]), first_date_of_months(
             self.from_date_str, self.to_date_str
         )
 
@@ -374,7 +410,7 @@ class Backtesting:
         self.metric = Metric(self.period_returns, self.vnindex_data["return"].to_list())
         return self.metric.sharpe_ratio(Decimal('0.03'))
 
-    def plot_nav(self):
+    def plot_nav(self, path="result/backtest/nav.png"):
         plt.figure(figsize=(10, 6))
 
         plt.plot(
@@ -395,9 +431,9 @@ class Backtesting:
         plt.ylabel('Asset Value')
         plt.grid(True)
         plt.legend()
-        plt.savefig("result/backtest/nav.png", dpi=300, bbox_inches='tight')
+        plt.savefig(path, dpi=300, bbox_inches='tight')
 
-    def plot_drawdown(self):
+    def plot_drawdown(self, path="result/backtest/drawdown.png"):
         _, dds = self.metric.maximum_drawdown()
 
         plt.figure(figsize=(10, 6))
@@ -412,22 +448,11 @@ class Backtesting:
         plt.xlabel('Time Step')
         plt.ylabel('Percentage')
         plt.grid(True)
-        plt.savefig("result/backtest/drawdown.png", dpi=300, bbox_inches='tight')
+        plt.savefig(path, dpi=300, bbox_inches='tight')
 
 
 if __name__ == "__main__":
-    start_date_str = backtesting_config["is_from_date_str"]
-    end_date_str = backtesting_config["is_end_date_str"]
-
-    smart_beta = Backtesting(
-        buy_fee=Decimal(backtesting_config["buy_fee"]),
-        sell_fee=Decimal(backtesting_config["sell_fee"]),
-        from_date_str=start_date_str,
-        to_date_str=end_date_str,
-        capital=Decimal(backtesting_config["capital"]),
-    )
-
-    grouped_data, rebalancing_dates = smart_beta.process_data()
+    smart_beta, grouped_data, rebalancing_dates = create_bt_instance()
     sr = smart_beta.run(grouped_data=grouped_data, rebalancing_dates=rebalancing_dates)
 
     print(f"Sharpe ratio {sr}")

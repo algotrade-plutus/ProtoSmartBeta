@@ -1,3 +1,7 @@
+"""
+Financial module for loading financial data
+"""
+
 from datetime import datetime
 import pandas as pd
 
@@ -8,7 +12,13 @@ class Financial:
         self.to_date = to_date
         self.data = data
 
-    def total_share(self):
+    def total_share(self) -> pd.DataFrame:
+        """
+        Get total share data frame
+
+        Returns:
+            pd.DataFrame
+        """
         owner_capital = (
             self.data[self.data["code"] == 4110].copy().drop(columns=["code"])
         )
@@ -20,7 +30,13 @@ class Financial:
         )
         return outstanding_share.copy()
 
-    def eps(self):
+    def eps(self) -> pd.DataFrame:
+        """
+        Get eps dataframe
+
+        Returns:
+            pd.DataFrame
+        """
         earning = (
             self.data[self.data["code"] == 72]
             .copy()
@@ -35,7 +51,13 @@ class Financial:
         eps = eps[["year", "tickersymbol", "eps"]].dropna()
         return eps.astype({"eps": float})
 
-    def dps(self):
+    def dps(self) -> pd.DataFrame:
+        """
+        Get dps dataframe
+
+        Returns:
+            pd.DataFrame
+        """
         dividends_paid = (
             self.data[self.data["code"] == 308]
             .copy()
@@ -43,9 +65,7 @@ class Financial:
             .drop(columns=["code"])
         )
 
-        dps = pd.merge(
-            dividends_paid, self.total_share(), on=["year", "tickersymbol"]
-        )
+        dps = pd.merge(dividends_paid, self.total_share(), on=["year", "tickersymbol"])
         dps["dps"] = dps["dividends_paid"].copy() / dps["outstanding_share"].copy()
         dps = dps[["year", "tickersymbol", "dps"]].dropna()
         return dps.astype({"dps": float})

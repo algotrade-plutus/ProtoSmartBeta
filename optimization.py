@@ -1,19 +1,22 @@
+"""
+Optimization module
+"""
+
 import logging
 from decimal import Decimal
 import optuna
 from optuna.samplers import TPESampler
-from config.config import backtesting_config, optimization_config
+from config.config import optimization_config
 
 import pandas as pd
 from metrics import *
-from backtesting import Backtesting
-from utils import get_date
+from backtesting import create_bt_instance
 
 
 class OptunaCallBack:
     def __init__(self) -> None:
         logging.basicConfig(
-            filename="result/optimization/optimization.log",
+            filename="result/optimization/optimization.log.csv",
             format="%(message)s",
             filemode="w",
         )
@@ -33,17 +36,7 @@ class OptunaCallBack:
 
 
 if __name__ == "__main__":
-    start_date_str = backtesting_config["is_from_date_str"]
-    end_date_str = backtesting_config["is_end_date_str"]
-
-    smart_beta = Backtesting(
-        buy_fee=Decimal(backtesting_config["buy_fee"]),
-        sell_fee=Decimal(backtesting_config["sell_fee"]),
-        from_date_str=start_date_str,
-        to_date_str=end_date_str,
-        capital=Decimal(backtesting_config["capital"]),
-    )
-    grouped_data, rebalancing_dates = smart_beta.process_data()
+    smart_beta, grouped_data, rebalancing_dates = create_bt_instance()
 
     def objective(trial):
         pelb = trial.suggest_float(

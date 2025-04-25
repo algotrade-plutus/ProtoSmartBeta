@@ -1,12 +1,13 @@
-from dotenv import load_dotenv
 import os
 import json
+from dotenv import load_dotenv
+
 
 load_dotenv()
 host = os.getenv("HOST")
 port = os.getenv("PORT")
 database = os.getenv("DATABASE")
-user = os.getenv("USER")
+user = os.getenv("USER_DB")
 password = os.getenv("PASSWORD")
 
 db_params = {

@@ -1,4 +1,7 @@
-import pandas as pd
+"""
+This module provides helper functions
+"""
+
 from typing import Tuple
 from datetime import datetime, timedelta, date
 from queue import Queue
@@ -33,8 +36,17 @@ def get_date(
     return start.date(), from_date.date(), to_date.date(), end.date()
 
 
-def first_date_of_month(start_date_str: str, end_date_str: str):
+def first_date_of_months(start_date_str: str, end_date_str: str) -> Queue:
+    """
+    Get list of first dates of months
 
+    Args:
+        start_date_str (str)
+        end_date_str (str)
+
+    Returns:
+        Queue
+    """
     first_days = Queue()
 
     current_date = datetime.strptime(start_date_str, "%Y-%m-%d").replace(day=1)
@@ -54,5 +66,13 @@ def first_date_of_month(start_date_str: str, end_date_str: str):
     return first_days
 
 
-def round_lot(quantity: int):
+def round_lot(quantity: int) -> int:
+    """
+    Rounding quantity to trading lot
+
+    Args:
+        quantity (int)
+    Returns:
+        int
+    """
     return int(quantity // 100) * 100

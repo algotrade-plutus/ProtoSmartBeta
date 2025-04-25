@@ -1,13 +1,30 @@
+"""
+This module is used for calculating metric
+"""
+
 from typing import List
+from decimal import Decimal
 import numpy as np
 
 
 class Metric:
-    def __init__(self, period_returns: List[float], benchmark_returns: List[float]):
+    def __init__(self, period_returns: List[Decimal], benchmark_returns: List[Decimal]):
         self.period_returns = period_returns
         self.benchmark_returns = benchmark_returns
 
-    def sharpe_ratio(self, risk_free_return):
+    def sharpe_ratio(self, risk_free_return: Decimal) -> Decimal:
+        """
+        Calculate sharpe ratio
+
+        Args:
+            risk_free_return (Decimal): _description_
+
+        Raises:
+            ValueError: None or empty period returns
+
+        Returns:
+            Decimal
+        """
         if not self.period_returns:
             raise ValueError('Annual returns should not be None or empty')
 
@@ -18,7 +35,19 @@ class Metric:
 
         return np.mean(excess_returns) / np.std(self.period_returns, ddof=1)
 
-    def sortino_ratio(self, risk_free_return: float) -> float:
+    def sortino_ratio(self, risk_free_return: Decimal) -> Decimal:
+        """
+        Calculate sortino ratio
+
+        Args:
+            risk_free_return (Decimal): _description_
+
+        Raises:
+            ValueError: None or empty period returns
+
+        Returns:
+            Decimal: _description_
+        """
         if not self.period_returns:
             raise ValueError('Annual returns should not be None or empty')
 
@@ -30,7 +59,17 @@ class Metric:
 
         return (np.mean(self.period_returns) - risk_free_return) / downside_risk
 
-    def maximum_drawdown(self):
+    def maximum_drawdown(self) -> Decimal:
+        """
+        Calculate maximum drawdown
+
+        Raises:
+            ValueError: None or empty period returns
+            ValueError: Invalid input
+
+        Returns:
+            Decimal: _description_
+        """
         dds = []
         if not self.period_returns:
             raise ValueError('Invalid Input')
@@ -53,7 +92,17 @@ class Metric:
 
         return mdd, dds
 
-    def longest_drawdown(self):
+    def longest_drawdown(self) -> int:
+        """
+        Calculate longest drawdown
+
+        Raises:
+            ValueError: None of empty period returns
+            ValueError: Invalid
+
+        Returns:
+            int: _description_
+        """
         if not self.period_returns:
             raise ValueError('Invalid Input')
 
@@ -78,7 +127,19 @@ class Metric:
 
         return max_period
 
-    def information_ratio(self):
+    def information_ratio(self) -> Decimal:
+        """
+        Calculate informaton ratio
+
+        Raises:
+            ValueError: None or empty period return or benchmark return
+            ValueError: Not equal length
+            ValueError: Invalid input
+            ValueError: Invalid length
+
+        Returns:
+            Decimal: _description_
+        """
         if not self.period_returns or not self.benchmark_returns:
             raise ValueError("Invalid Input")
 

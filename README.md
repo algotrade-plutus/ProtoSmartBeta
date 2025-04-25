@@ -58,8 +58,12 @@ Data can be download directly from [Google Drive](https://drive.google.com/drive
 - The data files are stored in the `data` folder with the following folder structure:
 ```
 data
-├── pe_dps.csv
-└── vnindex.csv
+├── is
+│   ├── pe_dps.csv
+│   └── vnindex.csv
+└── os
+    ├── pe_dps.csv
+    └── vnindex.csv
 ```
 - You should place this folder to the current ```PYTHONPATH``` for the following steps.
 #### Option 2. Run codes to collect data
@@ -106,8 +110,26 @@ The result will be stored in the `result/backtest/` folder.
 ## Optimization
 The configuration of optimization is stored in `parameter/optimization_parameter.json` you can adjust the range of parameters. Random seed is used for reconstructing the optimization process. The optimized parameter is stored in `parameter/optimized_parameter.json`
 ## Out-of-sample Backtesting
-Run the backtesting command with the out-sample-data. To load out-sample-data run the command
+- Specify the out-sample period and parameters in `parameter/backtesting_parameter.json` file.
+- The out-sample data is loaded on the previous by running the command
 ```bash
 python data_loader.py
 ```
+- To evaluate the out-sample data run the command below
+```bash
+python evaluation.py
+```
 ### Out-of-sample Backtesting Result
+- The out-sample backtesting results with VNINDEX benchmark is constructuted from 2022-01-01 to 2024-01-01.
+```
+| Metric                 | Value                              |
+|------------------------|------------------------------------|
+| Sharpe Ratio           | -2.9439                            |
+| Information Ratio      | 0.0369                             |
+| Sortino Ratio          | -0.9470                            |
+| Maximum Drawdown (MDD) | -0.4301                            |
+```
+- The NAV chart
+![NAV chart with VNINDEX benchmark](result/optimization/nav.png)
+- Drawdown chart
+![Drawdown chart](result/optimization/drawdown.png)
