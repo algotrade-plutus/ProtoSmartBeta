@@ -1,4 +1,6 @@
-# PE and Devidend Yeild
+# Proto: Smart Beta
+
+## PE and Devidend Yeild
 > Select stocks based on P/E and Devidend Yeild
 
 ## Abstract
