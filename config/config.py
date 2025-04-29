@@ -29,3 +29,7 @@ with open("parameter/backtesting_parameter.json", 'r', encoding="utf-8") as f:
 OPTIMIZATION_CONFIG = None
 with open("parameter/optimization_parameter.json", 'r', encoding="utf-8") as f:
     OPTIMIZATION_CONFIG = json.load(f)
+
+BEST_CONFIG = None
+with open("parameter/optimized_parameter.json", 'r', encoding="utf-8") as f:
+    BEST_CONFIG = json.load(f)

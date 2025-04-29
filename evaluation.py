@@ -3,6 +3,7 @@ Out-sample evaluation module
 """
 
 from decimal import Decimal
+from config.config import BEST_CONFIG
 from backtesting import create_bt_instance
 
 
@@ -14,8 +15,8 @@ if __name__ == "__main__":
     sr = bt.run(
         processed_data=grouped_data,
         execution_dates=rebalancing_dates,
-        pe=[0.2164884729382647, 17.174669892864713],
-        dy=[0.034556913031198136, 0.0876931181106818],
+        pe=BEST_CONFIG["pe"],
+        dy=BEST_CONFIG["dy"],
     )
 
     print(f"Sharpe ratio {sr}")
