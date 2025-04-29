@@ -1,5 +1,5 @@
 {
-    "random_seed": 2025,
+    "random_seed": 2024,
     "no_trials": 100,
     "dy_low": [0.01, 0.05],
     "dy_high": [0.055, 0.1],

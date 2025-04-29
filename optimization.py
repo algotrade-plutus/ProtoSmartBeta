@@ -82,6 +82,7 @@ if __name__ == "__main__":
         )
 
     optunaCallBack = OptunaCallBack()
+    # TODO: correct the seed to get input from the parameter/optimization_parameter.json
     study = optuna.create_study(sampler=TPESampler(seed=2024), direction="maximize")
     study.optimize(
         objective, n_trials=OPTIMIZATION_CONFIG["no_trials"], callbacks=[optunaCallBack]

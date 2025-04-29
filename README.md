@@ -1,4 +1,8 @@
-# Proto:Smart Beta
+![Static Badge](https://img.shields.io/badge/PLUTUS-75%25-darkgreen)
+![Static Badge](https://img.shields.io/badge/PLUTUS-Sample-darkblue)
+![Static Badge](https://img.shields.io/badge/PLUTUS-PROTO-%23880A88)
+
+# PROTO:Smart Beta
 
 ## PE and Devidend Yeild
 > Select stocks based on P/E and Devidend Yeild
@@ -53,11 +57,9 @@ DB_PASSWORD=<database password>
 DB_HOST=<host name or IP address>
 DB_PORT=<database port>
 ```
-
 ### Data Collection
 #### Option 1. Download from Google Drive
-Data can be download directly from [Google Drive](https://drive.google.com/drive/folders/1HleJFa_26hRajpOlmaREhcioXv9RSSUe?usp=drive_link).
-- The data files are stored in the `data` folder with the following folder structure:
+Data can be download directly from [Google Drive](https://drive.google.com/drive/folders/1HleJFa_26hRajpOlmaREhcioXv9RSSUe?usp=drive_link). The data files are stored in the `data` folder with the following folder structure:
 ```
 data
 ├── is
@@ -67,25 +69,41 @@ data
     ├── pe_dps.csv
     └── vnindex.csv
 ```
-- You should place this folder to the current ```PYTHONPATH``` for the following steps.
+You should place this folder to the current ```PYTHONPATH``` for the following steps.
 #### Option 2. Run codes to collect data
-1. Collect data from database
-Run this command below in the root directory .
+To collect data from database, run this command below in the root directory:
 ```bash
 python data_loader.py
 ```
 The result will be stored in the `data/pe_dps.csv` and `data/vnindex.csv`
 ### In-sample Backtesting
-- Specify period and parameters in `parameter/backtesting_parameter.json` file.
+Specify period and parameters in `parameter/backtesting_parameter.json` file.
 ```bash
 python backtesting.py
 ```
-The result will be stored in the `result/backtest/` folder.
+The results are stored in the `result/backtest/` folder.
 
 ### Optimization
+To run the optimization, execute the command in the root folder:
+```bash
+python optimization.py
+```
+The optimization parameter are store in `parameter/optimization_parameter.json`. After optimizing, the optimized parameters are stored in `parameter/optimized_parameter.json`.
+
 ### Out-of-sample Backtesting
-### Configurations
+[TODO: change the script name to out_sample_backtest.py or something like that]: #
+To run the out-of-sample backtesting results, execute this command
+```bash
+python evaluation.py
+```
+[TODO: change the name of optimization folder to out-of-sample-backtesting or something like that]: #
+The script will get value from `parameter/optimized_parameter.json` to execute. The results are stored in the `result/optimization` folder.
+
 ## In-sample Backtesting
+Running the in-sample backtesting by execute the command:
+```bash
+python backtesting.py
+```
 ### Evaluation Metrics
 - Backtesting results are stored in the `result/backtest/` folder. 
 - Used metrics to compare with VNINDEX are: 
@@ -104,19 +122,27 @@ The result will be stored in the `result/backtest/` folder.
 | Sortino Ratio          | -0.9558                            |
 | Maximum Drawdown (MDD) | -0.2828                            |
 ```
-- The NAV chart
+- The NAV chart. The chart is located at: `result/backtest/nav.png`
 ![NAV chart with VNINDEX benchmark](result/backtest/nav.png)
-- Drawdown chart
+- Drawdown chart. The chart is located at `result/backtest/drawdown.png`
 ![Drawdown chart](result/backtest/drawdown.png)
 
 ## Optimization
 The configuration of optimization is stored in `parameter/optimization_parameter.json` you can adjust the range of parameters. Random seed is used for reconstructing the optimization process. The optimized parameter is stored in `parameter/optimized_parameter.json`
+The optimization process can be reproduced by executing the command:
+```bash
+python optimization.py
+```
+The currently found optimized parameters with the seed `2024` are:
+```json
+{
+    "pe": [0.2164884729382647, 17.174669892864713],
+    "dy": [0.034556913031198136, 0.0876931181106818]
+}
+```
 ## Out-of-sample Backtesting
 - Specify the out-sample period and parameters in `parameter/backtesting_parameter.json` file.
-- The out-sample data is loaded on the previous by running the command
-```bash
-python data_loader.py
-```
+- The out-sample data is loaded on the previous step. Refer to section [Data](#data) for more information.
 - To evaluate the out-sample data run the command below
 ```bash
 python evaluation.py
@@ -131,7 +157,12 @@ python evaluation.py
 | Sortino Ratio          | -0.9470                            |
 | Maximum Drawdown (MDD) | -0.4301                            |
 ```
-- The NAV chart
+- The NAV chart. The chart is located at `result/optimization/nav.png`.
 ![NAV chart with VNINDEX benchmark](result/optimization/nav.png)
-- Drawdown chart
+- Drawdown chart. The chart is located at `result/optimization/drawdown.png`.
 ![Drawdown chart](result/optimization/drawdown.png)
+
+## Reference
+[1] ALGOTRADE, Algorithmic Trading Theory and Practice - A Practical Guide with Applications on the Vietnamese Stock Market, 1st ed. DIMI BOOK, 2023, pp. 64–67. Accessed: Apr. 30, 2025. [Online]. Available: [Link](https://hub.algotrade.vn/knowledge-hub/smart-beta-strategies/)
+
+[2] ALGOTRADE, “Weighting Methods Used in Smart-Beta Strategy,” [Website](https://algotrade.vn), Jul. 10, 2024. Available: [Link](https://hub.algotrade.vn/knowledge-hub/weighting-methods-used-in-smart-beta-strategy/) (accessed Apr. 30, 2025).
