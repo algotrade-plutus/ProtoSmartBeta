@@ -117,9 +117,9 @@ python backtesting.py
 ```
 | Metric                 | Value                              |
 |------------------------|------------------------------------|
-| Sharpe Ratio           | -3.2323                            |
+| Sharpe Ratio           | 1.3499                             |
 | Information Ratio      | 0.0298                             |
-| Sortino Ratio          | -0.9558                            |
+| Sortino Ratio          | 1.8032                            |
 | Maximum Drawdown (MDD) | -0.2828                            |
 ```
 - The NAV chart. The chart is located at: `result/backtest/nav.png`
