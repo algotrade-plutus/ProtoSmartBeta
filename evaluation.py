@@ -2,6 +2,7 @@
 Out-sample evaluation module
 """
 
+import numpy as np
 from decimal import Decimal
 from config.config import BEST_CONFIG
 from backtesting import create_bt_instance
@@ -21,7 +22,9 @@ if __name__ == "__main__":
 
     print(f"Sharpe ratio {sr}")
     print(f"Information ratio {bt.metric.information_ratio()}")
-    print(f"Sortino ratio {bt.metric.sortino_ratio( Decimal('0.03'))}")
+    print(
+        f"Sortino ratio {bt.metric.sortino_ratio( Decimal('0.00023')) * Decimal(np.sqrt(250))}"
+    )
     mdd, dds = bt.metric.maximum_drawdown()
     print(f"MDD {mdd}")
 

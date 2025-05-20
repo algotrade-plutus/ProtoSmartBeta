@@ -63,7 +63,7 @@ class Metric:
         downside_returns = [
             min(0, period_return - risk_free_return)
             for period_return in self.period_returns
-        ]x
+        ]
         downside_risk = np.sqrt(np.mean([d_r**2 for d_r in downside_returns]))
 
         return (np.mean(self.period_returns) - risk_free_return) / downside_risk

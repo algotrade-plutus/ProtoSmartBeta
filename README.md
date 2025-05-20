@@ -111,15 +111,16 @@ python backtesting.py
   - Sortino ratio (SoR)
   - Information ratio (Inf)
   - Maximum drawdown (MDD)
+- We use a risk-free rate of 6% per annum, equivalent to approximately 0.023% per day, as a benchmark for evaluating the Sharpe Ratio (SR) and Sortino Ratio (SoR).
 ### Parameters
 ### In-sample Backtesting Result
 - The backtesting results with VNINDEX benchmark is constructuted from 2019-01-01 to 2022-01-01.
 ```
 | Metric                 | Value                              |
 |------------------------|------------------------------------|
-| Sharpe Ratio           | 1.3499                             |
+| Sharpe Ratio           | 1.2971                             |
 | Information Ratio      | 0.0298                             |
-| Sortino Ratio          | 1.8032                            |
+| Sortino Ratio          | 1.7297                            |
 | Maximum Drawdown (MDD) | -0.2828                            |
 ```
 - The NAV chart. The chart is located at: `result/backtest/nav.png`
@@ -136,8 +137,8 @@ python optimization.py
 The currently found optimized parameters with the seed `2024` are:
 ```json
 {
-    "pe": [0.2164884729382647, 17.174669892864713],
-    "dy": [0.034556913031198136, 0.0876931181106818]
+    "pe": [0.01, 1e6],
+    "dy": [0, 15]
 }
 ```
 ## Out-of-sample Backtesting
@@ -152,10 +153,10 @@ python evaluation.py
 ```
 | Metric                 | Value                              |
 |------------------------|------------------------------------|
-| Sharpe Ratio           | -2.9439                            |
-| Information Ratio      | 0.0369                             |
-| Sortino Ratio          | -0.9470                            |
-| Maximum Drawdown (MDD) | -0.4301                            |
+| Sharpe Ratio           | -0.8555                            |
+| Information Ratio      | -0.0067                            |
+| Sortino Ratio          | -1.0783                            |
+| Maximum Drawdown (MDD) | -0.5154                            |
 ```
 - The NAV chart. The chart is located at `result/optimization/nav.png`.
 ![NAV chart with VNINDEX benchmark](result/optimization/nav.png)

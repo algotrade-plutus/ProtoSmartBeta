@@ -457,7 +457,7 @@ class Backtesting:
             self.tracking_dates.append(date[0])
 
         self.metric = Metric(self.period_returns, self.vnindex_data["return"].to_list())
-        return self.metric.sharpe_ratio(Decimal('0.0002'))
+        return self.metric.sharpe_ratio(Decimal('0.00023')) * Decimal(np.sqrt(250))
 
     def plot_nav(self, path="result/backtest/nav.png"):
         """
@@ -518,10 +518,10 @@ if __name__ == "__main__":
     )
     sr = smart_beta.run(processed_data=grouped_data, execution_dates=rebalancing_dates)
 
-    print(f"Sharpe ratio {sr * Decimal(np.sqrt(250))}")
+    print(f"Sharpe ratio {sr}")
     print(f"Information ratio {smart_beta.metric.information_ratio()}")
     print(
-        f"Sortino ratio {Decimal(np.sqrt(250)) * smart_beta.metric.sortino_ratio( Decimal('0.0002'))}"
+        f"Sortino ratio {Decimal(np.sqrt(250)) * smart_beta.metric.sortino_ratio( Decimal('0.00023'))}"
     )
     mdd, dds = smart_beta.metric.maximum_drawdown()
     print(f"MDD {mdd}")
