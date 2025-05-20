@@ -16,7 +16,10 @@ In value investing, one common approach to stock selection involves identifying 
 The core idea is to select stocks with a low P/E ratio and a high dividend yield, as these stocks may represent undervalued opportunities that also offer steady cash returns. This method is particularly effective in mature or stable markets, such as the Vietnamese stock market, where dividend-paying companies are often more established and financially sound.
 
 ## Hypothesis
-We filter and hold a collection of stocks with a P/E ratio in the range (0, 15) and a dividend per share (DPS) greater than 0.01. Existing holdings are sold before purchasing new stocks at each rebalancing period.
+We filter and maintain a portfolio of stocks with a price-to-earnings (P/E) ratio within the range of (0, 15) and a dividend yield (DY) greater than 0.01. The dividend yield is calculated as:
+- DY = DPS / Price
+
+where DPS denotes dividends per share. Existing holdings are sold before purchasing new stocks at each rebalancing period.
 
 ## Data
 - Data source: Algotrade database
@@ -137,8 +140,8 @@ python optimization.py
 The currently found optimized parameters with the seed `2024` are:
 ```json
 {
-    "pe": [0.01, 1e6],
-    "dy": [0, 15]
+    "pe": [0, 15],
+    "dy": [0.01, 1e6]
 }
 ```
 ## Out-of-sample Backtesting
@@ -153,10 +156,10 @@ python evaluation.py
 ```
 | Metric                 | Value                              |
 |------------------------|------------------------------------|
-| Sharpe Ratio           | -0.8555                            |
-| Information Ratio      | -0.0067                            |
-| Sortino Ratio          | -1.0783                            |
-| Maximum Drawdown (MDD) | -0.5154                            |
+| Sharpe Ratio           | -0.6420                            |
+| Information Ratio      | 0.0206                             |
+| Sortino Ratio          | -0.7986                            |
+| Maximum Drawdown (MDD) | -0.4715                            |
 ```
 - The NAV chart. The chart is located at `result/optimization/nav.png`.
 ![NAV chart with VNINDEX benchmark](result/optimization/nav.png)
