@@ -19,8 +19,7 @@ The core idea is to select stocks with a low P/E ratio and a high dividend yield
 We filter and maintain a portfolio of stocks with a price-to-earnings (P/E) ratio within the range of (0, 15) and a dividend yield (DY) greater than 0.01. The dividend yield is calculated as:
 - DY = DPS / Price
 
-where DPS denotes dividends per share. Existing holdings are sold before purchasing new stocks at each rebalancing period.
-
+where DPS denotes dividends per share. Existing holdings are sold before purchasing new stocks at each rebalancing period. The strategy does not yet account for trading volume; it is assumed that all stocks can be bought immediately without liquidity constraints.
 ## Data
 - Data source: Algotrade database
 - Data period: from 2022-01-01 to 2025-01-01
