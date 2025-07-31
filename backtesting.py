@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from config.config import BACKTESTING_CONFIG
 from database.data_service import DataService
 from filter.financial import Financial
-from metrics.metric import Metric
+from metrics.metric import Metric, get_returns
 
 from utils import get_date, first_date_of_months, round_lot
 
@@ -102,6 +102,7 @@ class Backtesting:
         self.allocation = []
 
         # Date tracking
+        self.monthly_tracking = []
         self.rebalancing_dates = []
         self.tracking_dates = []
         self.vnindex_data = None
@@ -451,6 +452,7 @@ class Backtesting:
             )
             self.update_period_return(group, is_rebalancing, pe, dy)
             if is_rebalancing:
+                self.monthly_tracking.append((date[0], self.assets[-1]))
                 self.rebalancing_dates.append(date[0])
                 execution_dates.get()
 
@@ -459,41 +461,44 @@ class Backtesting:
         self.metric = Metric(self.period_returns, self.vnindex_data["return"].to_list())
         return self.metric.sharpe_ratio(Decimal('0.00023')) * Decimal(np.sqrt(250))
 
-    def plot_nav(self, path="result/backtest/nav.png"):
+    def plot_hpr(self, path="result/backtest/hpr.svg"):
         """
         Plot and save NAV chart to path
 
         Args:
-            path (str, optional): _description_. Defaults to "result/backtest/nav.png".
+            path (str, optional): _description_. Defaults to "result/backtest/nav.svg".
         """
         plt.figure(figsize=(10, 6))
 
+        percent_portfolio = [100 * val for val in self.ac_returns]
+        percent_index = [100 * val for val in self.vnindex_data["ac_return"].to_numpy()]
+
         plt.plot(
             self.tracking_dates,
-            self.ac_returns,
+            percent_portfolio,
             label="Portfolio",
             color='black',
         )
         plt.plot(
             self.vnindex_data["date"],
-            self.vnindex_data["ac_return"],
+            percent_index,
             label="VNINDEX",
             color='red',
         )
 
-        plt.title('Asset Value Over Time')
+        plt.title('Holding Period Return Over Time')
         plt.xlabel('Time Step')
-        plt.ylabel('Asset Value')
+        plt.ylabel('Holding Period Return (%)')
         plt.grid(True)
         plt.legend()
-        plt.savefig(path, dpi=300, bbox_inches='tight')
+        plt.savefig(path, dpi=300, bbox_inches='tight', format='svg')
 
-    def plot_drawdown(self, path="result/backtest/drawdown.png"):
+    def plot_drawdown(self, path="result/backtest/drawdown.svg"):
         """
         Plot and save drawdown chart to path
 
         Args:
-            path (str, optional): _description_. Defaults to "result/backtest/drawdown.png".
+            path (str, optional): _description_. Defaults to "result/backtest/drawdown.svg".
         """
         _, drawdowns = self.metric.maximum_drawdown()
 
@@ -509,7 +514,7 @@ class Backtesting:
         plt.xlabel('Time Step')
         plt.ylabel('Percentage')
         plt.grid(True)
-        plt.savefig(path, dpi=300, bbox_inches='tight')
+        plt.savefig(path, dpi=300, bbox_inches='tight', format='svg')
 
 
 if __name__ == "__main__":
@@ -526,5 +531,16 @@ if __name__ == "__main__":
     mdd, dds = smart_beta.metric.maximum_drawdown()
     print(f"MDD {mdd}")
 
-    smart_beta.plot_nav()
+    monthly_df = pd.DataFrame(smart_beta.monthly_tracking, columns=["date", "asset"])
+    monthly_df_index = smart_beta.vnindex_data[
+        smart_beta.vnindex_data["date"].isin(monthly_df["date"])
+    ].copy()
+    returns = get_returns(monthly_df, monthly_df_index)
+
+    print(f"HPR {smart_beta.metric.hpr()}")
+    print(f"Excess HPR {smart_beta.metric.excess_hpr()} ")
+    print(f"Monthly return {returns['monthly_return']}")
+    print(f"Excess monthly return {returns['excess_monthly_return']}")
+    print(f"Annual return {returns['annual_return']}")
+    smart_beta.plot_hpr()
     smart_beta.plot_drawdown()

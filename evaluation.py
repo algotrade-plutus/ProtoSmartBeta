@@ -3,8 +3,10 @@ Out-sample evaluation module
 """
 
 import numpy as np
+import pandas as pd
 from decimal import Decimal
 from config.config import BEST_CONFIG
+from metrics.metric import get_returns
 from backtesting import create_bt_instance
 
 
@@ -28,5 +30,17 @@ if __name__ == "__main__":
     mdd, dds = bt.metric.maximum_drawdown()
     print(f"MDD {mdd}")
 
-    bt.plot_nav(path="result/optimization/nav.png")
-    bt.plot_drawdown(path="result/optimization/drawdown.png")
+    monthly_df = pd.DataFrame(bt.monthly_tracking, columns=["date", "asset"])
+    monthly_df_index = bt.vnindex_data[
+        bt.vnindex_data["date"].isin(monthly_df["date"])
+    ].copy()
+    returns = get_returns(monthly_df, monthly_df_index)
+
+    print(f"HPR {bt.metric.hpr()}")
+    print(f"Excess HPR {bt.metric.excess_hpr()} ")
+    print(f"Monthly return {returns['monthly_return']}")
+    print(f"Excess monthly return {returns['excess_monthly_return']}")
+    print(f"Annual return {returns['annual_return']}")
+
+    bt.plot_hpr(path="result/optimization/hpr.svg")
+    bt.plot_drawdown(path="result/optimization/drawdown.svg")

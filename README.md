@@ -118,17 +118,22 @@ python backtesting.py
 ### In-sample Backtesting Result
 - The backtesting results with VNINDEX benchmark is constructuted from 2019-01-01 to 2022-01-01.
 ```
-| Metric                 | Value                              |
-|------------------------|------------------------------------|
-| Sharpe Ratio           | 1.2971                             |
-| Information Ratio      | 0.0298                             |
-| Sortino Ratio          | 1.7297                             |
-| Maximum Drawdown (MDD) | -0.2828                            |
+| Metric                    | Value                              |
+|---------------------------|------------------------------------|
+| Sharpe Ratio              | 1.2971                             |
+| Information Ratio         | 0.0298                             |
+| Sortino Ratio             | 1.7297                             |
+| Maximum Drawdown (MDD)    | -0.2828                            |
+| HPR (%)                   | 104.9                              |
+| Excess HPR (%)            | 35.97                              |
+| Monthly return (%)        | 2.2617                             |
+| Excess monthly return (%) | 0.5012                             |
+| Annual return (%)         | 27.09                              |
 ```
-- The NAV chart. The chart is located at: `result/backtest/nav.png`
-![NAV chart with VNINDEX benchmark](result/backtest/nav.png)
-- Drawdown chart. The chart is located at `result/backtest/drawdown.png`
-![Drawdown chart](result/backtest/drawdown.png)
+- The HPR chart. The chart is located at: `result/backtest/hpr.svg`
+![HPR chart with VNINDEX benchmark](result/backtest/hpr.svg)
+- Drawdown chart. The chart is located at `result/backtest/drawdown.svg`
+![Drawdown chart](result/backtest/drawdown.svg)
 
 ## Optimization
 The configuration of optimization is stored in `parameter/optimization_parameter.json` you can adjust the range of parameters. Random seed is used for reconstructing the optimization process. The optimized parameter is stored in `parameter/optimized_parameter.json`
@@ -153,17 +158,22 @@ python evaluation.py
 ### Out-of-sample Backtesting Result
 - The out-sample backtesting results with VNINDEX benchmark is constructuted from 2022-01-01 to 2024-01-01.
 ```
-| Metric                 | Value                              |
-|------------------------|------------------------------------|
-| Sharpe Ratio           | -0.3497                            |
-| Information Ratio      | 0.0470                             |
-| Sortino Ratio          | -0.4363                            |
-| Maximum Drawdown (MDD) | -0.4604                            |
+| Metric                    | Value                              |
+|---------------------------|------------------------------------|
+| Sharpe Ratio              | -0.3497                            |
+| Information Ratio         | 0.0470                             |
+| Sortino Ratio             | -0.4363                            |
+| Maximum Drawdown (MDD)    | -0.4604                            |
+| HPR (%)                   | -3.170                             |
+| Excess HPR (%)            | 18.26                              |
+| Monthly return (%)        | -0.1904                            |
+| Excess monthly return (%) | 0.8778                             |
+| Annual return (%)         | -4.243                             |
 ```
-- The NAV chart. The chart is located at `result/optimization/nav.png`.
-![NAV chart with VNINDEX benchmark](result/optimization/nav.png)
-- Drawdown chart. The chart is located at `result/optimization/drawdown.png`.
-![Drawdown chart](result/optimization/drawdown.png)
+- The HPR chart. The chart is located at `result/optimization/hpr.svg`.
+![HPR chart with VNINDEX benchmark](result/optimization/hpr.svg)
+- Drawdown chart. The chart is located at `result/optimization/drawdown.svg`.
+![Drawdown chart](result/optimization/drawdown.svg)
 
 ## Reference
 [1] ALGOTRADE, Algorithmic Trading Theory and Practice - A Practical Guide with Applications on the Vietnamese Stock Market, 1st ed. DIMI BOOK, 2023, pp. 64–67. Accessed: Apr. 30, 2025. [Online]. Available: [Link](https://hub.algotrade.vn/knowledge-hub/smart-beta-strategies/)
