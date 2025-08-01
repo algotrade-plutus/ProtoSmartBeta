@@ -524,7 +524,9 @@ if __name__ == "__main__":
     sr = smart_beta.run(processed_data=grouped_data, execution_dates=rebalancing_dates)
 
     print(f"Sharpe ratio {sr}")
-    print(f"Information ratio {smart_beta.metric.information_ratio()}")
+    print(
+        f"Information ratio {smart_beta.metric.information_ratio() *   Decimal(np.sqrt(250))}"
+    )
     print(
         f"Sortino ratio {Decimal(np.sqrt(250)) * smart_beta.metric.sortino_ratio( Decimal('0.00023'))}"
     )

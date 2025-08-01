@@ -23,7 +23,7 @@ if __name__ == "__main__":
     )
 
     print(f"Sharpe ratio {sr}")
-    print(f"Information ratio {bt.metric.information_ratio()}")
+    print(f"Information ratio {bt.metric.information_ratio() * Decimal(np.sqrt(250))}")
     print(
         f"Sortino ratio {bt.metric.sortino_ratio( Decimal('0.00023')) * Decimal(np.sqrt(250))}"
     )

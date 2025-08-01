@@ -121,7 +121,7 @@ python backtesting.py
 | Metric                    | Value                              |
 |---------------------------|------------------------------------|
 | Sharpe Ratio              | 1.2971                             |
-| Information Ratio         | 0.0298                             |
+| Information Ratio         | 0.4734                             |
 | Sortino Ratio             | 1.7297                             |
 | Maximum Drawdown (MDD)    | -0.2828                            |
 | HPR (%)                   | 104.9                              |
@@ -161,7 +161,7 @@ python evaluation.py
 | Metric                    | Value                              |
 |---------------------------|------------------------------------|
 | Sharpe Ratio              | -0.3497                            |
-| Information Ratio         | 0.0470                             |
+| Information Ratio         | 0.7441                             |
 | Sortino Ratio             | -0.4363                            |
 | Maximum Drawdown (MDD)    | -0.4604                            |
 | HPR (%)                   | -3.170                             |
